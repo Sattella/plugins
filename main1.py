@@ -72,16 +72,6 @@ class MessageSplitterPlugin(Star):
         split_scope = self.config.get("split_scope", "llm_only")
         is_llm_reply = getattr(event, "__is_llm_reply", False)
 
-        # +++ 对 LLM 消息统一进行文本清洗 +++
-        if is_llm_reply:
-            for comp in result.chain:
-                if isinstance(comp, Plain) and comp.text:
-                    # 删除所有换行符
-                    comp.text = comp.text.replace('\n', '')
-                    # 删除星号和句号
-                    comp.text = comp.text.replace('*', '').replace('。', '')
-
-        # +++ 如果配置只处理 LLM 消息，但当前不是 LLM 消息，则直接返回 +++
         if split_scope == "llm_only" and not is_llm_reply:
             return
 
@@ -180,6 +170,12 @@ class MessageSplitterPlugin(Star):
             final_segments.append(merged_last)
             segments = final_segments
 
+        # +++ 新增：在每个分段内部删除换行符、星号和句号 +++
+        for seg in segments:
+            for comp in seg:
+                if isinstance(comp, Plain) and comp.text:
+                    comp.text = comp.text.replace('\n', '').replace('*', '').replace('。', '')
+
         # 判定是否需要对 At 组件执行特殊处理逻辑
         at_strategy = strategies.get('at', "跟随下段")
         at_needs_processing = at_strategy in ["接下文", "跟随下段", "嵌入"] and any(
@@ -199,7 +195,7 @@ class MessageSplitterPlugin(Star):
         if len(segments) > 1:
             logger.info(f"[Splitter] 消息被分为 {len(segments)} 段。")
 
-        # 8. 预处理：应用清理正则
+        # 8. 预处理：应用清理正则（如果配置了）
         if clean_pattern:
             for seg in segments:
                 for comp in seg:
