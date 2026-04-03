@@ -170,11 +170,11 @@ class MessageSplitterPlugin(Star):
             final_segments.append(merged_last)
             segments = final_segments
 
-        # +++ 新增：在每个分段内部删除换行符、星号和句号 +++
+        # +++ 关键：在每个分段内部删除换行符、星号、句号和美元符号（先分段，后清理） +++
         for seg in segments:
             for comp in seg:
                 if isinstance(comp, Plain) and comp.text:
-                    comp.text = comp.text.replace('\n', '').replace('*', '').replace('。', '')
+                    comp.text = comp.text.replace('\n', '').replace('*', '').replace('。', '').replace('$', '')
 
         # 判定是否需要对 At 组件执行特殊处理逻辑
         at_strategy = strategies.get('at', "跟随下段")
