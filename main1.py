@@ -70,7 +70,11 @@ class MessageSplitterPlugin(Star):
 
         # 2. 作用范围判定：根据配置决定是仅分段 LLM 回复还是分段所有消息
         split_scope = self.config.get("split_scope", "llm_only")
-        is_llm_reply = getattr(event, "__is_llm_reply", False)
+        try:
+            is_result_llm_reply = result.is_llm_result()
+        except Exception:
+            is_result_llm_reply = False
+        is_llm_reply = getattr(event, "__is_llm_reply", False) or is_result_llm_reply
 
         if split_scope == "llm_only" and not is_llm_reply:
             return
@@ -174,7 +178,7 @@ class MessageSplitterPlugin(Star):
         for seg in segments:
             for comp in seg:
                 if isinstance(comp, Plain) and comp.text:
-                    comp.text = comp.text.replace('\n', '').replace('*', '').replace('。', '').replace('$', '')
+                    comp.text = comp.text.replace('\n', '').replace('*', '').replace('。', '').replace('$', '').replace('-', '')
 
         # 判定是否需要对 At 组件执行特殊处理逻辑
         at_strategy = strategies.get('at', "跟随下段")
